@@ -1,0 +1,15 @@
+\n\n
+---------------------------------\n
+Result:\n
+  dnslookup: %{time_namelookup}\n
+  connect: %{time_connect}\n
+  appconnect: %{time_appconnect}\n
+  pretransfer: %{time_pretransfer}\n
+  starttransfer: %{time_starttransfer}\n
+  time_redirect: %{time_redirect}\n
+  \n
+  Total: %{time_total}\n
+---------------------------------\n
+Size: %{size_download}\n
+---------------------------------\n
+\n\n

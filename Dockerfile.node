@@ -1,0 +1,53 @@
+#################################
+# Pipy Builder
+#################################
+FROM node:12.22-alpine3.14 as pipy-builder
+
+ARG WORK_DIR=/workspace
+ARG PIPY_DIR=${WORK_DIR}/pipy
+
+WORKDIR ${WORK_DIR}
+
+ENV CXX=clang++
+ENV CC=clang
+
+# # install dependencies
+RUN apk add --no-cache openssh-client git cmake clang \
+    alpine-sdk linux-headers autoconf automake libtool \
+    tiff jpeg zlib zlib-dev pkgconf nasm file musl-dev \
+    util-linux
+
+# build 
+RUN cd ${WORK_DIR} \
+    && git clone https://github.com/flomesh-io/pipy.git \
+    && cd ${PIPY_DIR} \
+    && npm install \
+    && npm run build \
+    && mkdir -p ${PIPY_DIR}/build \
+    && cd ${PIPY_DIR}/build \
+    && cmake -DPIPY_GUI=OFF -DPIPY_TUTORIAL=OFF -DCMAKE_BUILD_TYPE=Release ${PIPY_DIR} \
+    && make
+
+#################################
+# Final Image
+#################################
+FROM node:16.13-alpine3.14
+
+ARG WORK_DIR=/workspace
+ARG PIPY_DIR=${WORK_DIR}/pipy
+
+WORKDIR /func
+ENV TARGET_PORT=3000
+ENV MAX_IDLE_TIME=10
+ENV TARGET_ENTRY='npm run start'
+
+COPY --from=pipy-builder ${PIPY_DIR}/bin/pipy /usr/local/bin
+COPY src/nodejs/ ./
+COPY pipy.js pipy.js
+
+RUN apk update && apk --no-cache add curl
+RUN npm install
+
+EXPOSE 8080
+
+ENTRYPOINT ["pipy", "pipy.js"]    
